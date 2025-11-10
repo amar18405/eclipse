@@ -2,46 +2,79 @@ OS CODES
 
 1)
 LINUX CODES
+#!/bin/bash
+# Arithmetic Calculator
+while true
+do
+    echo "Enter first number : "
+    read m
+    echo "Enter second number : "
+    read n
 
-echo "calculator"
-echo "Enter first number:"
-read a
-echo "Enter Second number:"
-read b
-echo "Enter Operator:"
-read op
+    printf "1) Addition\n2) Subtraction\n3) Multiplication\n4) Division\n"
+    echo "Enter choice of operation to be performed : "
+    read choice
 
-echo "$a $op $b"
+    case $choice in
+        1) echo "$m + $n = `expr $m + $n`";;
+        2) echo "$m - $n = `expr $m - $n`";;
+        3) echo "$m * $n = `expr $m \* $n`";;
+        4) 
+            if [ "$(echo "$n == 0" | bc)" -eq 1 ]; then
+    		echo "Division by zero is not allowed."
+	    else
+    		echo "$m / $n = $(echo "scale=2; $m / $n" | bc)"
+	    fi
+	    ;;
+        *) echo "Wrong Choice boss! Try Again";;
+    esac
 
-case $op in
-+) result=$(echo "$a + $b" | bc);;
--) result=$(echo "$a - $b" | bc);;
-\) result=$(echo "$a \ $b" | bc);;
-/) result=$(echo "$a / $b" | bc);;
-*) echo "Invalid";;
-esac
-echo "Result: $result"  
+    echo "Do you want to perform another operation? (y/n)"
+    read answer
+    if [ "$answer" != "y" ]; then
+        echo "Goodbye!"
+        break
+    fi
+done
+
+
+directory named mydir with a subdirectory subdir inside it; the -p flag makes parent directories if they don’t exist.
+mkdir -p mydir/subdir
+Creates a new file named file1.txt and writes the text between EOF markers into it.
+cat > mydir/subdir/file1.txt << EOF
+This is the content of file1.txt
+EOF
+➤ Copies file1.txt to a new file named file2.txt in the same directory.
+cp mydir/subdir/file1.txt mydir/subdir/file2.txt
+➤ Changes the permissions of file1.txt so the owner can read, write, and execute, while others can only read.
+chmod 744 mydir/subdir/file1.txt
+chmod 744 mydir/subdir/file2.txt
+Lists all files in mydir/subdir with detailed information like permissions, size, and modification time.
+ls -l mydir/subdir
 
 2)
 ORPHAN/ZOMBIE
 orphan 
-#include <stdio.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <sys/wait.h>
+#include<stdio.h>
+#include<sys/types.h>
+#include<unistd.h>
 
 int main()
 {
-  int pid=fork();
-  if((pid>0){
-    printf("parent process id%d\n",getpid());
-    printf("child process id%d\n",pid);
+    int pid = fork();
+    if(pid>0)
+    {
+          printf("Parent process id %d\n", getpid());
+          printf("Child process id %d\n", pid);
     }
-  else if (pid==0)
-    { sleep(10);
-        printf("child process id%d\n",getpid());
-      printf(("parent process id%d\n",getpid());
+    else
+    {
+        if(pid == 0)
+        {
+              sleep(10);
+              printf("Child process id %d\n", getpid());
+              printf("Parent process id %d\n", getppid());
+        }
     }
   return 0;
 }
