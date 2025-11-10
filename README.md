@@ -103,6 +103,93 @@ int main(void)
     exit(0);
     }
 
+asc in child desc in parent
+/* Write a program using fork to create a child process.
+   a) The parent process should sort numbers in ascending order and child process should sort numbers in descending order
+   b) Orphan Process
+   c) Zombie process
+*/
+
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <stdlib.h>
+#include <sys/wait.h>
+
+void print_array(int arr[], int size)
+{
+	for(int i=0; i<size; i++) printf("%d ", arr[i]);
+	printf("\n");
+}
+
+void sort_ascending(int arr[], int size)
+{
+	for(int i=0; i<size-1; i++)
+	{
+		for(int j=i+1; j<size; j++)
+		{
+			if(arr[i] > arr[j])
+			{
+				int temp = arr[i];
+				arr[i] = arr[j];
+				arr[j] = temp;
+			}
+		}
+	}
+}
+
+void sort_descending(int arr[], int size)
+{
+	for(int i=0; i<size-1; i++)
+	{
+		for(int j=i+1; j<size; j++)
+		{
+			if(arr[i] < arr[j])
+			{
+				int temp = arr[i];
+				arr[i] = arr[j];
+				arr[j] = temp;
+			}
+		}
+	}
+}
+
+int main()
+{
+	int size;
+	printf("Enter size of array : ");
+	scanf("%d", &size);
+
+	int arr[size];
+	printf("Start to enter the elements with space : ");
+	for(int i=0; i<size; i++) scanf("%d", &arr[i]);
+
+	pid_t num_pid = fork();
+	if(num_pid < 0)
+	{
+		printf("Error in fork execution\n");
+		exit(1);
+	}
+	else if(num_pid == 0)
+	{
+		printf("This is the child process id %d\n", getpid());
+		printf("This is the child process pp id %d\n", getppid());
+		sort_ascending(arr, size);
+		printf("Sorted ascending array in child: ");
+		print_array(arr, size);
+	}
+	else 
+	{
+		printf("This is the parent id %d\n", getpid());
+		printf("This is the parent pp id %d\n", getppid());
+		wait(NULL);
+		sort_descending(arr, size);
+		printf("Sorted descending array in parent: ");
+		print_array(arr, size);
+	}
+	return 0;
+}
+
 3)
 FCFS CPU ALGORITHM
 #include <stdio.h>
@@ -211,84 +298,152 @@ int main() {
 4)
 SRTF CPU ALGORITHM
 #include <stdio.h>
-#include <limits.h>
+#define MAX 20
+#define INF 9999
 
-struct Process {
-    int pid;      
-    int at;      
-    int bt;        
-    int rt;        
-    int ct;        
-    int tat;      
-    int wt;        
-    int completed;
-};
+void printGanttChart(int n, int timeline[], int proc[]) {
+    int i, j;
+    printf(" ");
+    for (i = 0; i < n; i++) {
+        for (j = 0; j < (timeline[i+1] - timeline[i]); j++)
+            printf("--");
+        printf(" ");
+    }
+    printf("\n|");
+    for (i = 0; i < n; i++) {
+        int len = timeline[i+1] - timeline[i];
+        for (j = 0; j < len - 1; j++)
+            printf(" ");
+        if (proc[i] == -1)
+            printf("Idle");
+        else
+            printf("P%d", proc[i] + 1);
+        for (j = 0; j < len - 1; j++)
+            printf(" ");
+        printf("|");
+    }
+    printf("\n ");
+    for (i = 0; i < n; i++) {
+        for (j = 0; j < (timeline[i+1] - timeline[i]); j++)
+            printf("--");
+        printf(" ");
+    }
+    printf("\n");
+    for (i = 0; i <= n; i++) {
+        printf("%d", timeline[i]);
+        int spaceCount = 0;
+        if (i < n) {
+            int segmentLength = timeline[i+1] - timeline[i];
+            spaceCount = segmentLength * 2 - (timeline[i] >= 10 ? 2 : 1);
+        }
+        for (j = 0; j < spaceCount; j++)
+            printf(" ");
+    }
+    printf("\n");
+}
 
 int main() {
-    int n, completed = 0, currentTime = 0, minRT, shortest;
-    float totalTAT = 0, totalWT = 0;
+    int n, i, completed = 0, current_time = 0;
+    int AT[MAX], BT[MAX], RT[MAX], CT[MAX], TAT[MAX], WT[MAX];
+    float avgTAT = 0, avgWT = 0;
 
-    printf("Enter number of processes: ");
+    printf("Enter the number of processes: ");
     scanf("%d", &n);
 
-    struct Process p[n];
-
-    for (int i = 0; i < n; i++) {
-        printf("Enter Process ID, Arrival Time, Burst Time for Process %d: ", i + 1);
-        scanf("%d%d%d", &p[i].pid, &p[i].at, &p[i].bt);
-        p[i].rt = p[i].bt;  
-        p[i].completed = 0;  
+    printf("Enter Arrival Times:\n");
+    for (i = 0; i < n; i++) {
+        printf("AT[%d]: ", i);
+        scanf("%d", &AT[i]);
     }
 
-    printf("\n--- Gantt Chart ---\n");
-    printf("0");
+    printf("Enter Burst Times:\n");
+    for (i = 0; i < n; i++) {
+        printf("BT[%d]: ", i);
+        scanf("%d", &BT[i]);
+        RT[i] = BT[i];
+    }
 
-    while (completed != n) {
-        shortest = -1;
-        minRT = INT_MAX;
+    int timeline[1000];
+    int proc[1000];
+    int idx = 0;
+    int last_proc = -1;
 
-        for (int i = 0; i < n; i++) {
-            if (p[i].at <= currentTime && p[i].completed == 0 && p[i].rt < minRT) {
-                minRT = p[i].rt;
+    // Find earliest arrival time
+    int earliest_AT = INF;
+    for (i = 0; i < n; i++) {
+        if (AT[i] < earliest_AT)
+            earliest_AT = AT[i];
+    }
+
+    // If earliest arrival > 0, insert initial idle time in timeline and proc
+    if (earliest_AT > 0) {
+        timeline[idx] = 0;
+        proc[idx] = -1;
+        idx++;
+        timeline[idx] = earliest_AT;
+        proc[idx] = -1;  // will be overwritten when process starts, but just a placeholder
+        last_proc = -1;
+        current_time = earliest_AT; // jump current_time forward to first arrival
+    } else {
+        timeline[idx] = 0;  // start timeline at 0
+        idx++;
+        current_time = 0;
+    }
+
+    while (completed < n) {
+        int min_rt = INF;
+        int shortest = -1;
+
+        for (i = 0; i < n; i++) {
+            if (AT[i] <= current_time && RT[i] > 0 && RT[i] < min_rt) {
+                min_rt = RT[i];
                 shortest = i;
             }
         }
 
         if (shortest == -1) {
-            printf(" | Idle | %d", currentTime + 1);
-            currentTime++;
-            continue;
-        }
+            if (last_proc != -1) {
+                timeline[idx] = current_time;
+                proc[idx] = -1;
+                idx++;
+                last_proc = -1;
+            }
+            current_time++;
+        } else {
+            if (shortest != last_proc) {
+                timeline[idx] = current_time;
+                proc[idx] = shortest;
+                idx++;
+                last_proc = shortest;
+            }
 
-        printf(" | P%d | %d", p[shortest].pid, currentTime + 1);
-        p[shortest].rt--;
-        currentTime++;
+            RT[shortest]--;
+            current_time++;
 
-        if (p[shortest].rt == 0) {
-            p[shortest].completed = 1;
-            completed++;
-
-            p[shortest].ct = currentTime;
-            p[shortest].tat = p[shortest].ct - p[shortest].at;
-            p[shortest].wt = p[shortest].tat - p[shortest].bt;
-
-            totalTAT += p[shortest].tat;
-            totalWT += p[shortest].wt;
+            if (RT[shortest] == 0) {
+                CT[shortest] = current_time;
+                completed++;
+            }
         }
     }
+    timeline[idx] = current_time;
 
-    printf("\n");
-
-    printf("\n--- Process Table ---\n");
-    printf("PID\tAT\tBT\tCT\tTAT\tWT\n");
-    for (int i = 0; i < n; i++) {
-        printf("%d\t%d\t%d\t%d\t%d\t%d\n",
-               p[i].pid, p[i].at, p[i].bt,
-               p[i].ct, p[i].tat, p[i].wt);
+    for (i = 0; i < n; i++) {
+        TAT[i] = CT[i] - AT[i];
+        WT[i] = TAT[i] - BT[i];
+        avgTAT += TAT[i];
+        avgWT += WT[i];
     }
 
-    printf("\nAverage TAT = %.2f", totalTAT / n);
-    printf("\nAverage WT = %.2f\n", totalWT / n);
+    printf("\nP\tAT\tBT\tCT\tTAT\tWT\n");
+    for (i = 0; i < n; i++) {
+        printf("P%d\t%d\t%d\t%d\t%d\t%d\n", i + 1, AT[i], BT[i], CT[i], TAT[i], WT[i]);
+    }
+
+    printf("\nAverage Turnaround Time: %.2f\n", avgTAT / n);
+    printf("Average Waiting Time: %.2f\n\n", avgWT / n);
+
+    printGanttChart(idx, timeline, proc);
 
     return 0;
 }
